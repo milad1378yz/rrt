@@ -1,7 +1,6 @@
 """Generate base-policy responses locally and judge every rubric criterion.
 
-This intentionally uses a plain in-process Transformers model. Distributed
-inference and cluster orchestration are deployment details rather than part of RRT.
+This intentionally uses a plain in-process Transformers model. Distributed inference and cluster orchestration are deployment details rather than part of RRT.
 """
 
 import argparse

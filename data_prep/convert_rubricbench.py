@@ -1,7 +1,6 @@
 """Create the paper's fixed RubricBench train/validation/test split.
 
-All 1,147 released prompts are shuffled with seed 42 and assigned to 847
-training, 150 validation, and 150 test prompts.
+All 1,147 released prompts are shuffled with seed 42 and assigned to 847 training, 150 validation, and 150 test prompts.
 
 Example::
 

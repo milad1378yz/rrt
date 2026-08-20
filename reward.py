@@ -1,9 +1,6 @@
 """Readable RRT reward used inside the policy-training loop.
 
-The training framework only needs to call ``score_from_verdicts`` for each
-rollout group, use ``record.reward`` in GRPO, and call ``update`` once after the
-policy step.  Framework-specific distributed orchestration is intentionally not
-part of this repository.
+The training framework only needs to call ``score_from_verdicts`` for each rollout group, use ``record.reward`` in GRPO, and call ``update`` once after the policy step.  Framework-specific distributed orchestration is intentionally not part of this repository.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -170,9 +167,7 @@ class RRTReward:
     ):
         """Judge a rollout group with sequential adaptive Fisher selection.
 
-        After each selected criterion, the method updates every rollout's MAP
-        quality and chooses the unjudged criterion with the largest group-total
-        Fisher information. The paper uses this path with a frozen RPN.
+        After each selected criterion, the method updates every rollout's MAP quality and chooses the unjudged criterion with the largest group-total Fisher information. The paper uses this path with a frozen RPN.
         """
 
         if self.online:

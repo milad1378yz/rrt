@@ -1,8 +1,6 @@
 """Create the paper's fixed RaR Science train/validation/test split.
 
-The released train and validation shards form one source pool. The converter
-samples 6,000 prompts without replacement with seed 42, then writes 5,000
-training, 500 validation, and 500 test prompts.
+The released train and validation shards form one source pool. The converter samples 6,000 prompts without replacement with seed 42, then writes 5,000 training, 500 validation, and 500 test prompts.
 
 Example::
 

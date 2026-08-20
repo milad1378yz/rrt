@@ -1,7 +1,6 @@
 """Create the paper's fixed RubricHub train/validation/test splits.
 
-Medical and Science each use 5,000 training prompts, 500 validation
-prompts, and 500 test prompts sampled without replacement with seed 42.
+Medical and Science each use 5,000 training prompts, 500 validation prompts, and 500 test prompts sampled without replacement with seed 42.
 
 Example::
 

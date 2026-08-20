@@ -16,8 +16,7 @@ DEFAULT_EMBED_MODEL = "Qwen/Qwen3-Embedding-4B"
 class ResponseParameterNetwork(nn.Module):
     """Predict criterion discrimination and difficulty from prompt and criterion text.
 
-    The text encoder is frozen. Its normalized embeddings are cached in memory,
-    while two small MLPs predict ``a`` and ``b`` from ``[prompt; criterion]``.
+    The text encoder is frozen. Its normalized embeddings are cached in memory, while two small MLPs predict ``a`` and ``b`` from ``[prompt; criterion]``.
     """
 
     def __init__(

@@ -4,9 +4,7 @@ The paper's standard model is a two-parameter probit item-response model:
 
     P(G_ij = 1 | z_i) = Phi(a_ij (z_i - b_ij)).
 
-Criterion verdicts are first oriented so that one always means favorable.  A
-standard-normal prior on rollout quality makes the one-dimensional posterior
-strictly concave, so its mode is found reliably by expanding-bracket bisection.
+Criterion verdicts are first oriented so that one always means favorable.  A standard-normal prior on rollout quality makes the one-dimensional posterior strictly concave, so its mode is found reliably by expanding-bracket bisection.
 """
 
 from dataclasses import dataclass
@@ -31,10 +29,7 @@ class RRTConfig:
 def oriented_labels(presence, points, *, use_point_weights: bool = False):
     """Return favorable verdicts and normalized criterion weights.
 
-    ``presence`` has shape ``[..., criteria]``.  Positive-point criteria are
-    favorable when present; negative-point pitfalls are favorable when absent.
-    RRT itself uses uniform weights.  Point weights are returned for the matched
-    points-based reward and evaluation metric.
+    ``presence`` has shape ``[..., criteria]``.  Positive-point criteria are favorable when present; negative-point pitfalls are favorable when absent. RRT itself uses uniform weights.  Point weights are returned for the matched points-based reward and evaluation metric.
     """
 
     presence = np.asarray(presence, dtype=np.float64)
@@ -80,8 +75,7 @@ def estimate_quality(
 ):
     """Infer one MAP quality per rollout with expanding-bracket bisection.
 
-    Inputs are flat criterion observations. ``group_index`` maps each observation
-    to a rollout.  It may be omitted for a single rollout.
+    Inputs are flat criterion observations. ``group_index`` maps each observation to a rollout.  It may be omitted for a single rollout.
     """
 
     verdicts = np.asarray(verdicts, dtype=np.float64)
@@ -218,9 +212,7 @@ def partial_m_step(
 ):
     """Run a hard-EM M-step over one rollout pool.
 
-    Dropout is active.  Every mini-batch recomputes detached MAP targets, while
-    gradients are accumulated for ``accumulation_steps`` mini-batches. Passing
-    zero accumulates the whole pool into the paper's one online AdamW step.
+    Dropout is active.  Every mini-batch recomputes detached MAP targets, while gradients are accumulated for ``accumulation_steps`` mini-batches. Passing zero accumulates the whole pool into the paper's one online AdamW step.
     """
 
     if not rollouts:
