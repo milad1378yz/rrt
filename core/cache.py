@@ -88,8 +88,7 @@ def judged_example(row, presence):
     return {
         "prompt": prompt_text(row),
         "criteria": [
-            {"text": item["criterion"], "points": item["points"]}
-            for item in extract_rubrics(row)
+            {"text": item["criterion"], "points": item["points"]} for item in extract_rubrics(row)
         ],
         "presence": presence,
     }

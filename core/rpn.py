@@ -9,7 +9,6 @@ from transformers import AutoModel, AutoTokenizer
 
 from core.rrt import RRTConfig
 
-
 DEFAULT_EMBED_MODEL = "Qwen/Qwen3-Embedding-4B"
 
 

@@ -24,7 +24,6 @@ from core.cache import (
 )
 from core.judge import JudgeConfig, RubricJudge, normalized_score
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -175,9 +174,7 @@ def build_parser():
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--top-k", type=int, default=0, help="Zero disables top-k sampling.")
     parser.add_argument("--repetition-penalty", type=float, default=1.1)
-    parser.add_argument(
-        "--enable-thinking", action=argparse.BooleanOptionalAction, default=True
-    )
+    parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
     defaults = JudgeConfig()
     parser.add_argument("--judge-model", default=defaults.model)
     parser.add_argument("--judge-timeout-seconds", type=float, default=defaults.timeout_seconds)

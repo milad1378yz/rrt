@@ -101,13 +101,11 @@ def main(argv=None):
 
     per_prompt = []
     metric_values = {
-        metric: {name: [] for name in caches}
-        for metric in ("criterion_score", "normalized_score")
+        metric: {name: [] for name in caches} for metric in ("criterion_score", "normalized_score")
     }
     for index in range(len(rows)):
         scores = {
-            name: score_example(examples[index], args.rollouts)
-            for name, examples in caches.items()
+            name: score_example(examples[index], args.rollouts) for name, examples in caches.items()
         }
         if any(score is None for score in scores.values()):
             continue

@@ -12,7 +12,6 @@ from core.cache import cache_rollouts, load_cache
 from core.rpn import DEFAULT_EMBED_MODEL, ResponseParameterNetwork
 from core.rrt import estimate_quality, flatten_rollouts, partial_m_step
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -77,9 +76,7 @@ def main(argv=None):
     cache = load_cache(args.cache)
     if "train" not in cache or "val" not in cache:
         raise KeyError("the RPN cache must contain train and val splits")
-    train_rollouts = cache_rollouts(
-        cache["train"], max_per_prompt=args.train_rollouts_per_prompt
-    )
+    train_rollouts = cache_rollouts(cache["train"], max_per_prompt=args.train_rollouts_per_prompt)
     val_rollouts = cache_rollouts(cache["val"])
     if not train_rollouts or not val_rollouts:
         raise ValueError("the cache contains no complete train/validation verdicts")
