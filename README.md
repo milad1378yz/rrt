@@ -1,6 +1,6 @@
 # Rubric Response Theory
 
-Reference implementation of **Rubric Rewards from Item Response Theory**. The accompanying [paper repository](https://github.com/milad1378yz/rubric_rl) contains the derivations, experiment details, and configuration tables.
+Reference implementation of **Rubric Rewards from Item Response Theory**.
 
 This repository is a compact, method-focused release. It contains only the code needed to prepare the paper datasets, generate and judge local-policy rollouts, fit the Response Parameter Network (RPN), compute RRT rewards, and evaluate judged policy outputs. Shell launchers, model-serving infrastructure, cluster configuration, tracking integrations, and archived experiments are intentionally excluded.
 
