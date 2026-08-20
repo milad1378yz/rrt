@@ -100,7 +100,82 @@ from your trainer.
 To let this package judge a response, pass a `RubricJudge` to `RRTReward` and call
 `score_response`.
 
-### 5. Use adaptive criterion selection
+### 5. Run minimal GRPO with veRL
+
+Install [veRL](https://verl.readthedocs.io/en/latest/start/install.html) with the rollout
+backend required by your hardware. The dataset converters above already write the
+`prompt`, `reward_model`, and `extra_info` fields expected by veRL.
+
+```bash
+git clone https://github.com/verl-project/verl.git /path/to/verl
+python -m pip install -e "/path/to/verl[vllm]"
+```
+
+For the smallest integration, use a frozen RPN through veRL's custom reward function.
+Save this adapter as `verl_rrt_reward.py` in the repository root:
+
+```python
+from functools import lru_cache
+
+from core.judge import RubricJudge
+from reward import RRTReward
+
+
+@lru_cache(maxsize=None)
+def load_rrt(checkpoint, device):
+    return RRTReward(
+        checkpoint,
+        device=device,
+        online=False,
+        judge=RubricJudge(),
+    )
+
+
+def compute_score(
+    data_source,
+    solution_str,
+    ground_truth,
+    extra_info=None,
+    checkpoint="",
+    device="cpu",
+):
+    info = extra_info or {}
+    return load_rrt(checkpoint, device).score_response(
+        info["user_prompt"],
+        solution_str,
+        info["rubrics_full"],
+    ).quality
+```
+
+Start from [veRL's FSDP GRPO
+launcher](https://github.com/verl-project/verl/blob/main/examples/grpo_trainer/run_qwen3_8b_fsdp.sh)
+and add the RRT reward overrides:
+
+```bash
+RRT_ROOT=/absolute/path/to/rrt
+VERL_ROOT=/absolute/path/to/verl
+
+cd "$VERL_ROOT"
+PYTHONPATH="$RRT_ROOT:${PYTHONPATH:-}" \
+MODEL_PATH=/path/to/base-policy-checkpoint \
+bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
+  data.train_files="$RRT_ROOT/data/datasets/rubrichub_science_irt/train.parquet" \
+  data.val_files="$RRT_ROOT/data/datasets/rubrichub_science_irt/val.parquet" \
+  reward.custom_reward_function.path="$RRT_ROOT/verl_rrt_reward.py" \
+  reward.custom_reward_function.name=compute_score \
+  reward.num_workers=1 \
+  "+reward.custom_reward_function.reward_kwargs.checkpoint=$RRT_ROOT/data/rpn/science/rpn.pt" \
+  "+reward.custom_reward_function.reward_kwargs.device=cpu" \
+  "+ray_kwargs.ray_init.runtime_env.env_vars.PYTHONPATH=$RRT_ROOT" \
+  'trainer.logger=["console"]'
+```
+
+This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise
+reward hook has no policy-step callback, so exact online RPN updates and the token-based
+length penalty require a custom veRL reward manager. Use the framework-independent loop
+above when implementing `rrt.update(records)` once per policy step.
+
+### 6. Use adaptive criterion selection
 
 Adaptive selection uses a frozen RPN:
 
@@ -123,7 +198,7 @@ records, selected = rrt.score_group_adaptive(
 )
 ```
 
-### 6. Evaluate policies
+### 7. Evaluate policies
 
 First build a test cache for each policy:
 
