@@ -82,9 +82,8 @@ records = [
         prompt,
         rubrics,
         presence,
-        response_tokens=response_tokens,
     )
-    for prompt, rubrics, presence, response_tokens in policy_step_rollouts
+    for prompt, rubrics, presence in policy_step_rollouts
 ]
 
 run_policy_update([record.reward for record in records])
@@ -171,9 +170,9 @@ bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
 ```
 
 This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise
-reward hook has no policy-step callback, so exact online RPN updates and the token-based
-length penalty require a custom veRL reward manager. Use the framework-independent loop
-above when implementing `rrt.update(records)` once per policy step.
+reward hook has no policy-step callback, so online RPN updates require a custom veRL
+reward manager. Use the framework-independent loop above when implementing
+`rrt.update(records)` once per policy step.
 
 ### 6. Use adaptive criterion selection
 
@@ -194,7 +193,6 @@ records, selected = rrt.score_group_adaptive(
     responses,
     rubrics,
     budget=criterion_budget,
-    response_tokens=response_token_counts,
 )
 ```
 

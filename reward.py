@@ -28,7 +28,6 @@ class RewardRecord:
     verdicts: np.ndarray
     quality: float
     uncertainty: float
-    length_penalty: float
     reward: float
 
     def as_training_rollout(self):
@@ -37,23 +36,6 @@ class RewardRecord:
             "criteria": self.criteria,
             "verdicts": self.verdicts,
         }
-
-
-def soft_length_penalty(
-    response_tokens: int,
-    *,
-    maximum_tokens: int = 32768,
-    buffer_tokens: int = 4096,
-    penalty_fraction: float = 0.5,
-    reward_scale: float = 8.0,
-):
-    """DAPO-style linear penalty over the final response-length buffer."""
-
-    start = maximum_tokens - buffer_tokens
-    if response_tokens <= start:
-        return 0.0
-    fraction = min(1.0, max(0.0, (response_tokens - start) / buffer_tokens))
-    return penalty_fraction * reward_scale * fraction
 
 
 class RRTReward:
@@ -89,15 +71,7 @@ class RRTReward:
             if metadata.get("optimizer") is not None:
                 self.optimizer.load_state_dict(metadata["optimizer"])
 
-    def score_from_verdicts(
-        self,
-        prompt,
-        rubrics,
-        presence,
-        *,
-        response_tokens=0,
-        maximum_tokens=32768,
-    ):
+    def score_from_verdicts(self, prompt, rubrics, presence):
         """Convert a complete rubric verdict vector into the RRT reward."""
 
         criteria = [str(rubric["criterion"]) for rubric in rubrics]
@@ -107,27 +81,22 @@ class RRTReward:
         a, b = self.model.predict(criteria, prompt)
         quality = float(estimate_quality(verdicts, a, b, config=self.model.rrt_config)[0])
         uncertainty = posterior_sd(a, b, quality, self.model.rrt_config)
-        penalty = soft_length_penalty(
-            response_tokens,
-            maximum_tokens=maximum_tokens,
-        )
         return RewardRecord(
             prompt=str(prompt),
             criteria=criteria,
             verdicts=verdicts,
             quality=quality,
             uncertainty=uncertainty,
-            length_penalty=penalty,
-            reward=quality - penalty,
+            reward=quality,
         )
 
-    def score_response(self, prompt, response, rubrics, **kwargs):
+    def score_response(self, prompt, response, rubrics):
         """Judge and score one response. Pass a judge when constructing the class."""
 
         if self.judge is None:
             raise RuntimeError("score_response requires a RubricJudge")
         presence = self.judge.grade(prompt, response, rubrics)
-        return self.score_from_verdicts(prompt, rubrics, presence, **kwargs)
+        return self.score_from_verdicts(prompt, rubrics, presence)
 
     def update(self, records):
         """Run one online stochastic partial M-step after a policy update."""
@@ -161,9 +130,6 @@ class RRTReward:
         responses,
         rubrics,
         budget,
-        *,
-        response_tokens=None,
-        maximum_tokens=32768,
     ):
         """Judge a rollout group with sequential adaptive Fisher selection.
 
@@ -216,17 +182,9 @@ class RRTReward:
                     config=self.model.rrt_config,
                 )[0]
 
-        if response_tokens is None:
-            response_tokens = [0] * len(responses)
-        if len(response_tokens) != len(responses):
-            raise ValueError("response_tokens must match responses")
         records = []
         favorable, _ = oriented_labels(raw_presence[:, selected], points[selected])
         for rollout_index, quality in enumerate(qualities):
-            penalty = soft_length_penalty(
-                response_tokens[rollout_index],
-                maximum_tokens=maximum_tokens,
-            )
             records.append(
                 RewardRecord(
                     prompt=str(prompt),
@@ -236,8 +194,7 @@ class RRTReward:
                     uncertainty=posterior_sd(
                         a[selected], b[selected], quality, self.model.rrt_config
                     ),
-                    length_penalty=penalty,
-                    reward=float(quality) - penalty,
+                    reward=float(quality),
                 )
             )
         return records, selected
