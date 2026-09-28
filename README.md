@@ -2,12 +2,27 @@
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white) [![Microsoft icon](https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/20px-Microsoft_icon.svg.png)](https://github.com/microsoft/LLM-Rubric) [Microsoft README reference](https://github.com/microsoft/LLM-Rubric)
 
-**Explore:** [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
+**Explore:** [🎬 RRT in action](#rrt-in-action) · [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
 
 Reference implementation of **Rubric Response Theory (RRT)**. This repository provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, RRT rewards, adaptive criterion selection, and held-out evaluation.
 
 > [!NOTE]
 > A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
+
+## RRT in action
+
+RRT uses learned criterion difficulty and discrimination to turn each response's verdict pattern into a quality estimate. In this example, responses with the same rubric point total receive different rewards.
+
+![RRT assigns different quality rewards to responses with equal rubric point totals, using the difficulty and discrimination of the criteria they pass.](assets/GMatrixReward.gif)
+
+<details>
+<summary>From verdicts to a reward: quality inference</summary>
+
+The E step combines the criterion verdicts with a Gaussian quality prior and finds the maximum a posteriori (MAP) quality by bisection. This inferred quality is the reward.
+
+![Criterion verdicts reshape the quality posterior, then bisection finds its mode to obtain the RRT reward.](assets/EStepSearch.gif)
+
+</details>
 
 ## Installation
 
@@ -58,6 +73,10 @@ python build_rollout_cache.py \
 This command uses the policy checkpoint's native chat template and calls the configured judge for each rubric criterion. Use `python build_rollout_cache.py --help` to change generation, judging, split, or device options.
 
 ### RPN fitting
+
+The RPN predicts criterion difficulty and discrimination from the prompt and criterion text. In each M step, it fits the observed verdicts while holding the inferred quality targets fixed.
+
+![The M step adjusts a criterion's difficulty and discrimination to fit observed pass and fail verdicts at fixed quality targets.](assets/MStepFit.gif)
 
 ```bash
 python fit_rpn.py \
@@ -163,7 +182,9 @@ This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointw
 
 #### Adaptive criterion selection
 
-Adaptive selection uses a frozen RPN:
+With a frozen RPN, adaptive selection judges the criterion with the largest total Fisher information across the response group, updates the quality estimates, and repeats until the criterion budget is reached. The animation illustrates selection on a rubric with five criteria.
+
+![Adaptive Fisher selection chooses informative criteria and updates response quality estimates after each judging step.](assets/FisherInfo.gif)
 
 ```python
 from core.judge import RubricJudge
