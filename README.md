@@ -1,11 +1,8 @@
 # Rubric Rewards from Item Response Theory
 
-Reference implementation of **Rubric Response Theory (RRT)**. This repository provides
-dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, RRT
-rewards, adaptive criterion selection, and held-out evaluation.
+Reference implementation of **Rubric Response Theory (RRT)**. This repository provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, RRT rewards, adaptive criterion selection, and held-out evaluation.
 
-A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO
-training loop.
+A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
 
 ## Install
 
@@ -16,8 +13,7 @@ python -m pip install -e ".[pipeline,dev]"
 export OPENAI_API_KEY="your-api-key"
 ```
 
-Set `JUDGE_MODEL` if you want to override the default judge model. A CUDA GPU is
-recommended for rollout generation and RPN fitting.
+Set `JUDGE_MODEL` if you want to override the default judge model. A CUDA GPU is recommended for rollout generation and RPN fitting.
 
 ## Run the pipeline
 
@@ -52,9 +48,7 @@ python build_rollout_cache.py \
   --model /path/to/base-policy-checkpoint
 ```
 
-This command uses the policy checkpoint's native chat template and calls the configured
-judge for each rubric criterion. Use `python build_rollout_cache.py --help` to change
-generation, judging, split, or device options.
+This command uses the policy checkpoint's native chat template and calls the configured judge for each rubric criterion. Use `python build_rollout_cache.py --help` to change generation, judging, split, or device options.
 
 ### 3. Fit the RPN
 
@@ -64,13 +58,11 @@ python fit_rpn.py \
   --output data/rpn/science
 ```
 
-The fitted checkpoint is written to `data/rpn/science/rpn.pt`. Use
-`python fit_rpn.py --help` to select another embedding model or training configuration.
+The fitted checkpoint is written to `data/rpn/science/rpn.pt`. Use `python fit_rpn.py --help` to select another embedding model or training configuration.
 
 ### 4. Add RRT to policy training
 
-Collect all rollout records for a policy step, train the policy with their rewards, and
-then update and save the RPN:
+Collect all rollout records for a policy step, train the policy with their rewards, and then update and save the RPN:
 
 ```python
 from reward import RRTReward
@@ -91,27 +83,20 @@ rrt.update(records)
 rrt.save("checkpoints/step_001/rpn.pt")
 ```
 
-Each `rubrics` value is a list of dictionaries with `criterion` and `points` fields.
-Each `presence` value is the aligned Boolean verdict vector. Replace
-`policy_step_rollouts` and `run_policy_update` with the corresponding values and call
-from your trainer.
+Each `rubrics` value is a list of dictionaries with `criterion` and `points` fields. Each `presence` value is the aligned Boolean verdict vector. Replace `policy_step_rollouts` and `run_policy_update` with the corresponding values and call from your trainer.
 
-To let this package judge a response, pass a `RubricJudge` to `RRTReward` and call
-`score_response`.
+To let this package judge a response, pass a `RubricJudge` to `RRTReward` and call `score_response`.
 
 ### 5. Run minimal GRPO with veRL
 
-Install [veRL](https://verl.readthedocs.io/en/latest/start/install.html) with the rollout
-backend required by your hardware. The dataset converters above already write the
-`prompt`, `reward_model`, and `extra_info` fields expected by veRL.
+Install [veRL](https://verl.readthedocs.io/en/latest/start/install.html) with the rollout backend required by your hardware. The dataset converters above already write the `prompt`, `reward_model`, and `extra_info` fields expected by veRL.
 
 ```bash
 git clone https://github.com/verl-project/verl.git /path/to/verl
 python -m pip install -e "/path/to/verl[vllm]"
 ```
 
-For the smallest integration, use a frozen RPN through veRL's custom reward function.
-Save this adapter as `verl_rrt_reward.py` in the repository root:
+For the smallest integration, use a frozen RPN through veRL's custom reward function. Save this adapter as `verl_rrt_reward.py` in the repository root:
 
 ```python
 from functools import lru_cache
@@ -146,9 +131,7 @@ def compute_score(
     ).quality
 ```
 
-Start from [veRL's FSDP GRPO
-launcher](https://github.com/verl-project/verl/blob/main/examples/grpo_trainer/run_qwen3_8b_fsdp.sh)
-and add the RRT reward overrides:
+Start from [veRL's FSDP GRPO launcher](https://github.com/verl-project/verl/blob/main/examples/grpo_trainer/run_qwen3_8b_fsdp.sh) and add the RRT reward overrides:
 
 ```bash
 RRT_ROOT=/absolute/path/to/rrt
@@ -169,10 +152,7 @@ bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
   'trainer.logger=["console"]'
 ```
 
-This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise
-reward hook has no policy-step callback, so online RPN updates require a custom veRL
-reward manager. Use the framework-independent loop above when implementing
-`rrt.update(records)` once per policy step.
+This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise reward hook has no policy-step callback, so online RPN updates require a custom veRL reward manager. Use the framework-independent loop above when implementing `rrt.update(records)` once per policy step.
 
 ### 6. Use adaptive criterion selection
 
