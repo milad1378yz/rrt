@@ -4,7 +4,7 @@ Reference implementation of **Rubric Response Theory (RRT)**. This repository pr
 
 A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
 
-## Install
+## Installation
 
 ```bash
 conda create --name rrt python=3.10 -y
@@ -15,11 +15,11 @@ export OPENAI_API_KEY="your-api-key"
 
 Set `JUDGE_MODEL` if you want to override the default judge model. A CUDA GPU is recommended for rollout generation and RPN fitting.
 
-## Run the pipeline
+## Experiments
 
 The commands below use RubricHub Science as the example.
 
-### 1. Prepare data
+### Dataset preparation
 
 Choose one converter:
 
@@ -39,7 +39,7 @@ python -m data_prep.convert_rubricbench
 
 Use `--out-dir /path/to/output` to change a converter's output directory.
 
-### 2. Generate and judge rollouts
+### Rollout generation and judging
 
 ```bash
 python build_rollout_cache.py \
@@ -50,7 +50,7 @@ python build_rollout_cache.py \
 
 This command uses the policy checkpoint's native chat template and calls the configured judge for each rubric criterion. Use `python build_rollout_cache.py --help` to change generation, judging, split, or device options.
 
-### 3. Fit the RPN
+### RPN fitting
 
 ```bash
 python fit_rpn.py \
@@ -60,7 +60,7 @@ python fit_rpn.py \
 
 The fitted checkpoint is written to `data/rpn/science/rpn.pt`. Use `python fit_rpn.py --help` to select another embedding model or training configuration.
 
-### 4. Add RRT to policy training
+### Policy training
 
 Collect all rollout records for a policy step, train the policy with their rewards, and then update and save the RPN:
 
@@ -87,7 +87,7 @@ Each `rubrics` value is a list of dictionaries with `criterion` and `points` fie
 
 To let this package judge a response, pass a `RubricJudge` to `RRTReward` and call `score_response`.
 
-### 5. Run minimal GRPO with veRL
+#### Minimal GRPO with veRL
 
 Install [veRL](https://verl.readthedocs.io/en/latest/start/install.html) with the rollout backend required by your hardware. The dataset converters above already write the `prompt`, `reward_model`, and `extra_info` fields expected by veRL.
 
@@ -154,7 +154,7 @@ bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
 
 This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise reward hook has no policy-step callback, so online RPN updates require a custom veRL reward manager. Use the framework-independent loop above when implementing `rrt.update(records)` once per policy step.
 
-### 6. Use adaptive criterion selection
+#### Adaptive criterion selection
 
 Adaptive selection uses a frozen RPN:
 
@@ -176,7 +176,7 @@ records, selected = rrt.score_group_adaptive(
 )
 ```
 
-### 7. Evaluate policies
+### Evaluation
 
 First build a test cache for each policy:
 
@@ -207,7 +207,7 @@ python evaluate.py \
 
 Use `python evaluate.py --help` for evaluation options.
 
-## Test
+## Testing
 
 ```bash
 python -m pytest -q
