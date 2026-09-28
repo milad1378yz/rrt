@@ -4,10 +4,10 @@
 
 **Explore:** [🎬 RRT in action](#rrt-in-action) · [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
 
-Reference implementation of **Rubric Response Theory (RRT)**. This repository provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, RRT rewards, adaptive criterion selection, and held-out evaluation.
+**Rubric Response Theory (RRT)** converts binary rubric verdicts into rewards for language model training. This implementation provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, frozen and online RRT rewards, adaptive criterion selection, and paired evaluation on held-out prompts.
 
 > [!NOTE]
-> A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
+> Integrate [`RRTReward`](reward.py) with your GRPO or PPO trainer. RRT computes rewards and updates the RPN; your trainer collects rollouts and optimizes the policy.
 
 ## RRT in action
 
@@ -26,18 +26,20 @@ The E step combines the criterion verdicts with a Gaussian quality prior and fin
 
 ## Installation
 
+Run the commands below from the repository root.
+
 ```bash
 conda create --name rrt python=3.10 -y
 conda activate rrt
-python -m pip install -e ".[pipeline,dev]"
+python -m pip install -e ".[pipeline]"
 export OPENAI_API_KEY="your-api-key"
 ```
 
-Set `JUDGE_MODEL` if you want to override the default judge model. A CUDA GPU is recommended for rollout generation and RPN fitting.
+The `pipeline` extra installs the dataset and judge dependencies. Set `JUDGE_MODEL` in your shell to override the default judge model. A CUDA GPU is recommended for rollout generation and RPN fitting; both scripts accept `--device`.
 
 ## Experiments
 
-The commands below use RubricHub Science as the example.
+The commands below use RubricHub Science and a local policy checkpoint. Prepare the data, build a judged cache, and fit the RPN before integrating rewards into policy training.
 
 **Workflow:** 📚 Prepare data → 🧪 Judge rollouts → 🧠 Fit the RPN → 🎯 Train the policy → 📊 Evaluate
 
@@ -59,7 +61,16 @@ python -m data_prep.convert_rar_science
 python -m data_prep.convert_rubricbench
 ```
 
-Use `--out-dir /path/to/output` to change a converter's output directory.
+Each converter writes `train.parquet`, `val.parquet`, and `test.parquet`:
+
+| Dataset | Default output directory |
+| --- | --- |
+| RubricHub Medical | `data/datasets/rubrichub_medical_irt` |
+| RubricHub Science | `data/datasets/rubrichub_science_irt` |
+| Rubrics as Rewards Science | `data/datasets/rar_science_irt` |
+| RubricBench | `data/datasets/rubricbench_irt` |
+
+Use `--out-dir /path/to/output` to choose a destination, or set `DATA_ROOT` to replace the default `data` directory for dataset conversion. The parquet rows include chat messages in `prompt`, rubric criteria in `reward_model`, and the original prompt and full rubric in `extra_info`.
 
 ### Rollout generation and judging
 
@@ -70,11 +81,13 @@ python build_rollout_cache.py \
   --model /path/to/base-policy-checkpoint
 ```
 
-This command uses the policy checkpoint's native chat template and calls the configured judge for each rubric criterion. Use `python build_rollout_cache.py --help` to change generation, judging, split, or device options.
+By default, this command generates eight responses per prompt for the `train` and `val` splits using the policy checkpoint's native chat template. The judge checks each rubric criterion for each response.
+
+The output directory contains `rollout_cache.pkl` with the verdicts and `summary.json` with counts of graded and missing rollouts. Use `--rollouts` and `--splits` to change the cache contents, or `python build_rollout_cache.py --help` for generation and judging options.
 
 ### RPN fitting
 
-The RPN predicts criterion difficulty and discrimination from the prompt and criterion text. In each M step, it fits the observed verdicts while holding the inferred quality targets fixed.
+The RPN predicts criterion difficulty and discrimination from the prompt and criterion text. It uses a frozen text encoder, `Qwen/Qwen3-Embedding-4B` by default, and trains two small prediction networks. In each M step, it fits the observed verdicts while holding the inferred quality targets fixed.
 
 ![The M step adjusts a criterion's difficulty and discrimination to fit observed pass and fail verdicts at fixed quality targets.](assets/MStepFit.gif)
 
@@ -84,7 +97,9 @@ python fit_rpn.py \
   --output data/rpn/science
 ```
 
-The fitted checkpoint is written to `data/rpn/science/rpn.pt`. Use `python fit_rpn.py --help` to select another embedding model or training configuration.
+Fitting requires complete judged rollouts in both the `train` and `val` cache splits. It saves the checkpoint with the lowest validation negative log likelihood to `data/rpn/science/rpn.pt` and the training history to `data/rpn/science/metrics.json`. The checkpoint stores the RPN prediction networks and the encoder configuration; loading it also loads the referenced encoder.
+
+Use `--embed-model` to choose another encoder, or `python fit_rpn.py --help` for training options.
 
 ### Policy training
 
@@ -109,17 +124,18 @@ rrt.update(records)
 rrt.save("checkpoints/step_001/rpn.pt")
 ```
 
-Each `rubrics` value is a list of dictionaries with `criterion` and `points` fields. Each `presence` value is the aligned Boolean verdict vector. Replace `policy_step_rollouts` and `run_policy_update` with the corresponding values and call from your trainer.
+Each entry in `policy_step_rollouts` is `(prompt, rubrics, presence)` for one response. `rubrics` is a list of dictionaries with `criterion` and `points` fields, and `presence` is the aligned Boolean verdict vector. The sign of `points` determines the favorable outcome: satisfying a positive criterion or avoiding a negative criterion. Replace `policy_step_rollouts` and `run_policy_update` with your trainer's rollout data and policy update.
+
+Each returned record exposes `reward`, `quality`, and `uncertainty`. The reward equals the inferred MAP quality, and uncertainty estimates the posterior standard deviation. With `online=True`, `rrt.update(records)` performs one RPN optimizer step over the policy step's collected records. Set `online=False` to keep the RPN frozen.
 
 To let this package judge a response, pass a `RubricJudge` to `RRTReward` and call `score_response`.
 
 #### Minimal GRPO with veRL
 
-Install [veRL](https://verl.readthedocs.io/en/latest/start/install.html) with the rollout backend required by your hardware. The dataset converters above already write the `prompt`, `reward_model`, and `extra_info` fields expected by veRL.
+Prepare a veRL checkout at `/path/to/verl` using its [installation guide](https://verl.readthedocs.io/en/latest/start/install.html), including FSDP and your chosen rollout backend. Install RRT in that same Python environment. The dataset converters above provide the `prompt`, `reward_model`, and `extra_info` fields used by the adapter.
 
 ```bash
-git clone https://github.com/verl-project/verl.git /path/to/verl
-python -m pip install -e "/path/to/verl[vllm]"
+python -m pip install -e "/absolute/path/to/rrt[pipeline]"
 ```
 
 For the smallest integration, use a frozen RPN through veRL's custom reward function. Save this adapter as `verl_rrt_reward.py` in the repository root:
@@ -154,7 +170,7 @@ def compute_score(
         info["user_prompt"],
         solution_str,
         info["rubrics_full"],
-    ).quality
+    ).reward
 ```
 
 Start from [veRL's FSDP GRPO launcher](https://github.com/verl-project/verl/blob/main/examples/grpo_trainer/run_qwen3_8b_fsdp.sh) and add the RRT reward overrides:
@@ -166,6 +182,7 @@ VERL_ROOT=/absolute/path/to/verl
 cd "$VERL_ROOT"
 PYTHONPATH="$RRT_ROOT:${PYTHONPATH:-}" \
 MODEL_PATH=/path/to/base-policy-checkpoint \
+VERL_USE_UV=0 \
 bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
   data.train_files="$RRT_ROOT/data/datasets/rubrichub_science_irt/train.parquet" \
   data.val_files="$RRT_ROOT/data/datasets/rubrichub_science_irt/val.parquet" \
@@ -178,7 +195,9 @@ bash examples/grpo_trainer/run_qwen3_8b_fsdp.sh \
   'trainer.logger=["console"]'
 ```
 
-This minimal veRL hook returns the RRT MAP quality from a frozen RPN. The pointwise reward hook has no policy-step callback, so online RPN updates require a custom veRL reward manager. Use the framework-independent loop above when implementing `rrt.update(records)` once per policy step.
+`VERL_USE_UV=0` makes the launcher use the active Python environment where RRT and veRL are installed. Adjust the launcher's device count, batch sizes, and token limits for your hardware and dataset.
+
+This adapter returns the RRT reward from a frozen RPN. For online RPN updates, integrate `rrt.update(records)` once after each policy step in your trainer, following the loop above.
 
 #### Adaptive criterion selection
 
@@ -204,9 +223,11 @@ records, selected = rrt.score_group_adaptive(
 )
 ```
 
+`responses` contains the rollouts for one prompt, and `criterion_budget` is an integer from one to the number of rubric criteria. The result contains one reward record per response and the selected criteria's zero-based indices. Each selected criterion is judged across the whole response group.
+
 ### Evaluation
 
-First build a test cache for each policy:
+First build a test cache for each policy using the same held-out dataset, judge settings, and number of rollouts:
 
 ```bash
 python build_rollout_cache.py \
@@ -233,10 +254,6 @@ python evaluate.py \
   rrt=data/caches/science_rrt_test
 ```
 
-Use `python evaluate.py --help` for evaluation options.
+The report in `results/science.json` contains the mean favorable criterion rate (`criterion_score`), the rubric score weighted by absolute points (`normalized_score`), and paired differences from the reference policy with 95% bootstrap confidence intervals. Per-prompt scores are saved to `results/science.per_prompt.parquet`.
 
-## Testing
-
-```bash
-python -m pytest -q
-```
+Evaluation uses eight judged responses per prompt by default and includes only prompts with enough complete verdicts in every cache. Set `--rollouts` to match the caches if you generated a different number, or use `python evaluate.py --help` for more options.
