@@ -1,8 +1,13 @@
 # Rubric Rewards from Item Response Theory
 
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white)
+
+**Explore:** [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
+
 Reference implementation of **Rubric Response Theory (RRT)**. This repository provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, RRT rewards, adaptive criterion selection, and held-out evaluation.
 
-A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
+> [!NOTE]
+> A policy trainer is not included. Integrate `reward.py` with your existing GRPO or PPO training loop.
 
 ## Installation
 
@@ -18,6 +23,8 @@ Set `JUDGE_MODEL` if you want to override the default judge model. A CUDA GPU is
 ## Experiments
 
 The commands below use RubricHub Science as the example.
+
+**Workflow:** 📚 Prepare data → 🧪 Judge rollouts → 🧠 Fit the RPN → 🎯 Train the policy → 📊 Evaluate
 
 ### Dataset preparation
 
