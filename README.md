@@ -1,6 +1,6 @@
 # Rubric Rewards from Item Response Theory
 
-[![arXiv](https://img.shields.io/badge/arXiv-2609.35646-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.35646) ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white) ![Microsoft icon](https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/20px-Microsoft_icon.svg.png)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.35646-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.35646) [![YouTube](https://img.shields.io/badge/YouTube-Video-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=EjtWicbvJr0) ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white) ![Microsoft icon](https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/20px-Microsoft_icon.svg.png)
 
 **Explore:** [🎬 RRT in action](#rrt-in-action) · [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
 
@@ -14,6 +14,10 @@ Summing the points of satisfied criteria gives distinct verdict patterns the sam
 > Integrate [`RRTReward`](reward.py) into your existing GRPO or PPO training loop.
 
 ## RRT in action
+
+Watch the video for a visual walkthrough of the method and results.
+
+[![Watch the RRT video on YouTube](https://img.youtube.com/vi/EjtWicbvJr0/maxresdefault.jpg)](https://www.youtube.com/watch?v=EjtWicbvJr0)
 
 RRT uses learned criterion difficulty and discrimination to turn each response's verdict pattern into a quality estimate. In this example, responses with the same rubric point total receive different rewards.
 
