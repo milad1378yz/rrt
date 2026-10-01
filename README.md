@@ -242,14 +242,10 @@ Use `python evaluate.py --help` for evaluation options.
 ## Citation
 
 ```bibtex
-@misc{yazdani2026rubric,
-  title         = {Rubric Rewards from Item Response Theory},
-  author        = {Yazdani, Milad and Souri, Yaser and Zhou, Xiren and Chawla, Pranit and Shahriari, Dena and Som, Subhojit and Song, Xia},
-  year          = {2026},
-  eprint        = {2609.35646},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  doi           = {10.48550/arXiv.2609.35646},
-  url           = {https://arxiv.org/abs/2609.35646}
+@article{yazdani2026rubric,
+  title={Rubric Rewards from Item Response Theory},
+  author={Yazdani, Milad and Souri, Yaser and Zhou, Xiren and Chawla, Pranit and Shahriari, Dena and Som, Subhojit and Song, Xia},
+  journal={arXiv preprint arXiv:2609.35646},
+  year={2026}
 }
 ```
