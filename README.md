@@ -1,10 +1,14 @@
 # Rubric Rewards from Item Response Theory
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white) ![Microsoft icon](https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/20px-Microsoft_icon.svg.png)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.35646-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.35646) ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white) ![PyTorch 2.1+](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white) ![Microsoft icon](https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/20px-Microsoft_icon.svg.png)
 
 **Explore:** [🎬 RRT in action](#rrt-in-action) · [⚙️ Installation](#installation) · [🧪 Experiments](#experiments) · [🎯 Policy training](#policy-training) · [📊 Evaluation](#evaluation)
 
 Reference implementation of **Rubric Response Theory (RRT)**. This repository provides dataset preparation, rollout judging, Response Parameter Network (RPN) fitting, rewards with frozen or online RPN updates, adaptive criterion selection, and held-out evaluation.
+
+## Overview
+
+Summing the points of satisfied criteria gives distinct verdict patterns the same reward and ignores how well each criterion separates the current rollouts. RRT instead fits a two-parameter item response model: the reward is the posterior mode of rollout quality given the verdicts, the RPN predicts each criterion's difficulty and discrimination from the prompt and criterion text, and online EM keeps the RPN calibrated as the policy changes. Adaptive Fisher selection judges only the most informative criteria to reduce judge requests.
 
 > [!NOTE]
 > Integrate [`RRTReward`](reward.py) into your existing GRPO or PPO training loop.
@@ -234,3 +238,18 @@ python evaluate.py \
 ```
 
 Use `python evaluate.py --help` for evaluation options.
+
+## Citation
+
+```bibtex
+@misc{yazdani2026rubric,
+  title         = {Rubric Rewards from Item Response Theory},
+  author        = {Yazdani, Milad and Souri, Yaser and Zhou, Xiren and Chawla, Pranit and Shahriari, Dena and Som, Subhojit and Song, Xia},
+  year          = {2026},
+  eprint        = {2609.35646},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  doi           = {10.48550/arXiv.2609.35646},
+  url           = {https://arxiv.org/abs/2609.35646}
+}
+```
