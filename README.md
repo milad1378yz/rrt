@@ -207,8 +207,3 @@ python evaluate.py \
 
 Use `python evaluate.py --help` for evaluation options.
 
-## Test
-
-```bash
-python -m pytest -q
-```
